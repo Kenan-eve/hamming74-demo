@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hamming(7,4)/(8,4) — 在线演示</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ============ RESET & VARIABLES ============ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-deep:#060b14; --bg-surface:#0c1525; --bg-panel:#101a2e; --bg-elevated:#152036;
+  --border-subtle:#1a2a45; --border-accent:#1e3a5f;
+  --cyan:#00e5ff; --cyan-dim:rgba(0,229,255,0.15); --cyan-glow:rgba(0,229,255,0.4);
+  --magenta:#e040fb; --magenta-dim:rgba(224,64,251,0.15);
+  --amber:#ffc107; --amber-dim:rgba(255,193,7,0.15);
+  --green:#00e676; --green-dim:rgba(0,230,118,0.15); --green-glow:rgba(0,230,118,0.5);
+  --red:#ff1744; --red-dim:rgba(255,23,68,0.15); --red-glow:rgba(255,23,68,0.5);
+  --blue:#448aff; --blue-dim:rgba(68,138,255,0.2);
+  --text-primary:#e8eaed; --text-secondary:#8899aa; --text-muted:#546e7a;
+  --font-display:'Orbitron','Noto Sans SC',sans-serif;
+  --font-mono:'JetBrains Mono','Noto Sans SC',monospace;
+  --font-body:'Noto Sans SC','JetBrains Mono',sans-serif;
+  --radius-sm:4px; --radius:8px; --radius-lg:12px;
+  --transition:200ms cubic-bezier(0.4,0,0.2,1);
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:var(--font-body); background:var(--bg-deep); color:var(--text-primary);
+  display:flex; flex-direction:column; user-select:none; -webkit-font-smoothing:antialiased;
+}
+body::after{
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:9999;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);
+}
+.bg-grid{
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px);
+  background-size:60px 60px;
+}
+
+/* ============ HEADER ============ */
+.header{
+  position:relative; z-index:10; display:flex; align-items:center; justify-content:space-between;
+  padding:0 28px; height:64px; min-height:64px;
+  background:var(--bg-surface); border-bottom:1px solid var(--border-subtle);
+}
+.header-brand{
+  display:flex; align-items:center; gap:14px;
+  font-family:var(--font-display); font-size:20px; font-weight:700; letter-spacing:0.08em;
+  color:var(--cyan); text-transform:uppercase;
+}
+.header-brand .dot{width:10px;height:10px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan-glow);animation:pulse-dot 2s infinite}
+.header-status{display:flex;align-items:center;gap:16px}
+
+.status-badge{
+  display:flex;align-items:center;gap:8px;padding:6px 16px;border-radius:20px;
+  font-family:var(--font-mono);font-size:13px;letter-spacing:0.05em;
+  border:1px solid var(--border-subtle); background:var(--bg-panel);
+}
+.status-badge .indicator{width:9px;height:9px;border-radius:50%}
+.status-badge.sim .indicator{background:var(--amber);box-shadow:0 0 6px rgba(255,193,7,0.5)}
+
+/* Code type selector */
+.code-type-toggle{
+  display:flex;align-items:center;gap:0;margin-left:8px;
+  border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border-subtle);
+}
+.code-type-btn{
+  font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:0.05em;
+  padding:4px 12px;cursor:pointer;transition:all var(--transition);
+  background:var(--bg-deep);color:var(--text-muted);border:none;
+}
+.code-type-btn.active{background:var(--cyan-dim);color:var(--cyan)}
+.code-type-btn:hover:not(.active){color:var(--text-primary);background:var(--bg-surface)}
+
+/* ============ MAIN LAYOUT ============ */
+.main{
+  position:relative;z-index:10; display:flex; flex:1; overflow:hidden;
+  padding:16px; gap:16px;
+}
+
+/* ============ LEFT PANEL ============ */
+.panel-left{
+  width:310px; min-width:310px; display:flex;flex-direction:column;gap:14px;
+}
+.panel{
+  background:var(--bg-panel); border:1px solid var(--border-subtle); border-radius:var(--radius-lg);
+  padding:18px; backdrop-filter:blur(10px);
+}
+.panel-title{
+  font-family:var(--font-display);font-size:12px;font-weight:700;letter-spacing:0.15em;
+  color:var(--text-muted);text-transform:uppercase;margin-bottom:14px;
+}
+.input-row{display:flex;gap:8px;align-items:stretch}
+.input-text{
+  flex:1; min-width:0; font-family:var(--font-mono);font-size:15px;padding:9px 14px;
+  background:var(--bg-deep);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);
+  color:var(--text-primary);outline:none;transition:border-color var(--transition);
+}
+.input-text:focus{border-color:var(--cyan)}
+.input-text::placeholder{color:var(--text-muted)}
+
+.btn{
+  font-family:var(--font-mono);font-size:14px;font-weight:600;letter-spacing:0.05em;
+  padding:8px 20px;border-radius:var(--radius-sm);border:1px solid var(--border-accent);
+  background:var(--bg-panel);color:var(--text-primary);cursor:pointer;
+  transition:all var(--transition); white-space:nowrap;
+}
+.btn:hover{background:var(--bg-elevated);border-color:var(--cyan);color:var(--cyan)}
+.btn.accent{background:var(--cyan-dim);border-color:var(--cyan);color:var(--cyan)}
+.btn.accent:hover{background:rgba(0,229,255,0.25);box-shadow:0 0 16px var(--cyan-dim)}
+
+.mode-options{display:flex;flex-direction:column;gap:6px}
+.mode-opt{
+  display:flex;align-items:center;gap:12px;padding:9px 14px;
+  border-radius:var(--radius-sm);cursor:pointer;transition:all var(--transition);
+  border:1px solid transparent;background:var(--bg-deep);
+  font-family:var(--font-mono);font-size:13px;color:var(--text-secondary);
+}
+.mode-opt:hover{border-color:var(--border-accent);color:var(--text-primary)}
+.mode-opt.active{border-color:var(--cyan);background:var(--cyan-dim);color:var(--cyan)}
+.mode-opt .radio-dot{
+  width:14px;height:14px;border-radius:50%;border:2px solid var(--text-muted);
+  transition:all var(--transition);flex-shrink:0;
+}
+.mode-opt.active .radio-dot{border-color:var(--cyan);background:var(--cyan);box-shadow:0 0 8px var(--cyan-glow)}
+
+.mode-params{margin-top:2px;display:flex;gap:8px;align-items:center}
+.mode-params label{font-family:var(--font-mono);font-size:12px;color:var(--text-muted)}
+.mode-params input{
+  width:56px;padding:5px 8px;font-family:var(--font-mono);font-size:13px;
+  background:var(--bg-deep);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);
+  color:var(--text-primary);text-align:center;outline:none;
+}
+.mode-params input:focus{border-color:var(--cyan)}
+
+/* ============ CENTER — VERTICAL PIPELINE ============ */
+.panel-center{
+  flex:1; display:flex; flex-direction:column; gap:10px; min-width:0;
+}
+.pipeline-container{
+  flex:1; background:var(--bg-panel); border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg); padding:20px 28px;
+  display:flex; flex-direction:column; justify-content:center; gap:0;
+  position:relative; overflow-y:auto;
+}
+.pipeline-container::before{
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse at center,rgba(0,229,255,0.04) 0%,transparent 70%);
+  pointer-events:none;
+}
+.pipeline-flow{
+  display:flex; flex-direction:column; align-items:stretch; gap:0;
+  flex:1; justify-content:center;
+}
+
+.stage{
+  display:flex; align-items:center; gap:20px; padding:10px 0;
+}
+.stage-label{
+  font-family:var(--font-display);font-size:13px;font-weight:700;letter-spacing:0.1em;
+  color:var(--text-secondary);text-transform:uppercase;
+  width:130px; min-width:130px; text-align:right; flex-shrink:0;
+}
+.stage-bits{
+  display:flex; gap:7px; flex-shrink:0;
+}
+.bit{
+  width:44px;height:44px;border-radius:var(--radius);
+  background:var(--bg-deep);border:2px solid var(--border-subtle);
+  font-family:var(--font-mono);font-size:19px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text-muted); transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+  position:relative;
+}
+.bit.active{background:var(--blue-dim);border-color:var(--blue);color:#fff;box-shadow:0 0 12px rgba(68,138,255,0.35)}
+.bit.data-active{background:rgba(0,229,255,0.2);border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 14px var(--cyan-dim)}
+.bit.error{background:var(--red-dim);border-color:var(--red);color:var(--red);box-shadow:0 0 16px var(--red-glow);animation:pulse-error 0.8s infinite}
+.bit.corrected{background:var(--green-dim);border-color:var(--green);color:var(--green);box-shadow:0 0 16px var(--green-glow)}
+.bit.syndrome{background:var(--magenta-dim);border-color:var(--magenta);color:var(--magenta);box-shadow:0 0 10px rgba(224,64,251,0.3)}
+.bit.output{background:rgba(0,230,118,0.15);border-color:var(--green);color:var(--green);box-shadow:0 0 14px var(--green-dim)}
+
+.stage-extra{
+  font-family:var(--font-mono);font-size:12px;color:var(--text-muted);
+  margin-left:auto; flex-shrink:0; text-align:right; min-width:120px;
+}
+
+.stage-connector{
+  display:flex; align-items:center; padding:0 0 0 140px; height:28px;
+}
+.stage-connector .v-line{
+  width:2px;height:100%;background:var(--border-accent);position:relative;
+}
+.stage-connector .v-line::after{
+  content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  width:0;height:0;border-top:7px solid var(--cyan);border-left:5px solid transparent;border-right:5px solid transparent;
+}
+.stage-connector.flowing .v-line{
+  background:var(--cyan);box-shadow:0 0 8px var(--cyan-dim);
+  animation:flowPulse 0.6s ease infinite;
+}
+
+.stage-status-badge{
+  font-family:var(--font-display);font-size:13px;font-weight:700;letter-spacing:0.1em;
+  padding:5px 16px;border-radius:20px;
+}
+.stage-status-badge.ok{background:var(--green-dim);color:var(--green);border:1px solid rgba(0,230,118,0.3)}
+.stage-status-badge.fixed{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(255,193,7,0.3)}
+.stage-status-badge.limit{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,23,68,0.3)}
+
+.mode-badge{
+  position:absolute;top:14px;right:18px;z-index:5;
+  font-family:var(--font-mono);font-size:12px;color:var(--text-muted);letter-spacing:0.08em;
+}
+.mode-badge span{color:var(--cyan);font-weight:600}
+
+/* History nav */
+.history-nav{
+  display:flex;align-items:center;justify-content:center;gap:20px;padding:4px 0;
+}
+.history-nav .nav-btn{
+  width:40px;height:40px;border-radius:50%;border:1px solid var(--border-subtle);
+  background:var(--bg-panel);color:var(--text-secondary);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:20px;transition:all var(--transition);
+}
+.history-nav .nav-btn:hover{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-dim)}
+.history-nav .nav-btn:disabled{opacity:0.3;cursor:not-allowed}
+.history-nav .nav-btn.char-nav{font-size:14px;letter-spacing:-2px}
+.history-nav .nav-info{
+  font-family:var(--font-mono);font-size:13px;color:var(--text-secondary);min-width:260px;text-align:center;
+}
+
+/* ============ RIGHT PANEL ============ */
+.panel-right{width:310px;min-width:310px;display:flex;flex-direction:column;gap:14px}
+
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-item{
+  background:var(--bg-deep);border-radius:var(--radius);padding:14px 12px;
+  text-align:center;border:1px solid var(--border-subtle);
+}
+.stat-value{
+  font-family:var(--font-display);font-size:34px;font-weight:700;
+  letter-spacing:0.03em;line-height:1;
+}
+.stat-label{
+  font-family:var(--font-mono);font-size:12px;color:var(--text-muted);
+  letter-spacing:0.08em;margin-top:6px;text-transform:uppercase;
+}
+.stat-value.cyan{color:var(--cyan)}
+.stat-value.green{color:var(--green)}
+.stat-value.amber{color:var(--amber)}
+.stat-value.red{color:var(--red)}
+
+.current-char-box{
+  background:var(--bg-deep);border:1px solid var(--border-subtle);border-radius:var(--radius);
+  padding:14px;text-align:center;
+}
+.current-char-box .big-char{
+  font-family:var(--font-display);font-size:48px;font-weight:800;
+  color:var(--cyan);text-shadow:0 0 28px var(--cyan-dim);line-height:1.1;
+}
+.current-char-box .char-info{
+  font-family:var(--font-mono);font-size:12px;color:var(--text-muted);margin-top:4px;
+}
+
+.match-indicator{
+  text-align:center;padding:12px;
+  font-family:var(--font-display);font-size:14px;font-weight:600;letter-spacing:0.08em;
+  border-radius:var(--radius);
+}
+.match-indicator.pass{background:var(--green-dim);color:var(--green);border:1px solid rgba(0,230,118,0.3)}
+.match-indicator.fail{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,23,68,0.3)}
+.match-indicator.pending{background:transparent;color:var(--text-muted);border:1px solid var(--border-subtle)}
+
+.transfer-row{
+  display:flex;justify-content:space-between;margin-top:10px;
+  font-family:var(--font-mono);font-size:13px;color:var(--text-muted);
+}
+.transfer-row span{color:var(--text-primary)}
+
+/* ============ BOTTOM DRAWER ============ */
+.drawer-toggle{
+  position:relative;z-index:10;display:flex;align-items:center;justify-content:center;
+  height:34px;cursor:pointer;background:var(--bg-surface);border-top:1px solid var(--border-subtle);
+  font-family:var(--font-display);font-size:12px;letter-spacing:0.15em;color:var(--text-muted);
+  transition:color var(--transition);
+}
+.drawer-toggle:hover{color:var(--cyan)}
+.drawer-toggle .arrow{transition:transform var(--transition);margin-left:8px;font-size:14px}
+.drawer.open .drawer-toggle .arrow{transform:rotate(180deg)}
+
+.drawer-content{
+  display:none;position:relative;z-index:10;height:260px;min-height:260px;
+  background:var(--bg-surface);border-top:1px solid var(--border-subtle);
+}
+.drawer.open .drawer-content{display:flex}
+.drawer-tabs{display:flex;flex-direction:column;width:140px;min-width:140px;border-right:1px solid var(--border-subtle);padding:10px}
+.drawer-tab{
+  font-family:var(--font-mono);font-size:13px;padding:10px 14px;cursor:pointer;
+  border-radius:var(--radius-sm);color:var(--text-muted);transition:all var(--transition);
+  letter-spacing:0.05em;
+}
+.drawer-tab:hover{color:var(--text-primary);background:var(--bg-panel)}
+.drawer-tab.active{color:var(--cyan);background:var(--cyan-dim)}
+.drawer-panel{flex:1;display:none;overflow:hidden}
+.drawer-panel.active{display:flex}
+#berChart{width:100%;height:100%}
+.log-view{
+  flex:1;overflow-y:auto;padding:10px 14px;
+  font-family:var(--font-mono);font-size:12px;line-height:1.7;
+  color:var(--text-secondary);white-space:pre-wrap;word-break:break-all;
+}
+
+/* ============ TOAST ============ */
+.toast-container{
+  position:fixed;top:80px;right:24px;z-index:10000;display:flex;flex-direction:column;gap:8px;
+}
+.toast{
+  padding:12px 20px;border-radius:var(--radius);font-family:var(--font-mono);font-size:13px;
+  animation:slideIn 0.3s ease;pointer-events:auto;
+  border:1px solid;max-width:400px;
+}
+.toast.info{background:var(--cyan-dim);border-color:var(--cyan);color:var(--cyan)}
+.toast.error{background:var(--red-dim);border-color:var(--red);color:var(--red)}
+.toast.success{background:var(--green-dim);border-color:var(--green);color:var(--green)}
+
+/* ============ ANIMATIONS ============ */
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.4}}
+@keyframes pulse-error{0%,100%{box-shadow:0 0 8px var(--red-glow)}50%{box-shadow:0 0 24px var(--red),0 0 36px var(--red-glow)}}
+@keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes flowPulse{0%,100%{opacity:0.4}50%{opacity:1}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.stage-animate{animation:fadeInUp 0.4s ease both}
+
+/* ============ SCROLLBAR ============ */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-subtle);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border-accent)}
+
+/* User badge (bottom-right) */
+.user-panel{
+  flex:1;min-height:0;display:flex;align-items:flex-start;overflow:hidden;padding:10px 12px;
+  position:relative;
+}
+.user-panel-year{
+  position:absolute;top:12px;right:16px;
+  font-family:var(--font-mono);font-size:9px;color:var(--text-muted);
+}
+.user-badge{
+  display:flex;flex-direction:column;align-items:stretch;gap:6px;width:100%;
+  min-height:0;padding:2px 0 0;
+}
+.user-badge-row{
+  display:flex;align-items:center;gap:10px;width:100%;min-height:0;
+}
+.user-badge-row + .user-badge-row{
+  border-top:1px solid var(--border-subtle);padding-top:6px;
+}
+.user-badge .avatar{
+  width:34px;height:34px;border-radius:50%;object-fit:cover;
+  border:2px solid var(--cyan);box-shadow:0 0 12px var(--cyan-dim);flex-shrink:0;
+}
+.user-badge-logo{
+  width:34px;height:34px;object-fit:contain;flex-shrink:0;opacity:0.9;
+  filter:drop-shadow(0 0 8px rgba(0,229,255,0.15));
+}
+.user-badge-text{
+  min-width:0;font-family:var(--font-mono);line-height:1.22;
+}
+.user-badge .user-name{
+  font-size:12px;font-weight:600;color:var(--text-primary);letter-spacing:0.04em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.user-badge .user-tag{
+  margin-top:2px;font-size:9px;color:var(--text-muted);
+  letter-spacing:0.06em;text-transform:uppercase;
+}
+.user-badge-copy{
+  width:100%;text-align:center;font-family:var(--font-mono);font-size:9px;
+  line-height:1.1;color:var(--text-muted);
+}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="toast-container" id="toasts"></div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-brand">
+    <div class="dot"></div>
+    <span id="headerTitle">Hamming(7,4) Analyzer</span>
+    <div class="code-type-toggle" id="codeTypeToggle">
+      <button class="code-type-btn active" data-ct="74" onclick="app.setCodeType('74')">(7,4)</button>
+      <button class="code-type-btn" data-ct="84" onclick="app.setCodeType('84')">(8,4)</button>
+    </div>
+  </div>
+  <div class="header-status">
+    <span class="status-badge sim" id="statusBadge">
+      <span class="indicator"></span>
+      <span id="statusText">SIMULATION</span>
+    </span>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- LEFT PANEL -->
+  <div class="panel-left">
+    <div class="panel">
+      <div class="panel-title">传输数据</div>
+      <div class="input-row">
+        <input class="input-text" id="textInput" placeholder="输入字符串…" onkeydown="if(event.key==='Enter')app.sendText()" autofocus>
+      </div>
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn accent" onclick="app.sendText()" style="flex:1">发送</button>
+        <button class="btn" onclick="app.sendQuickDemo()" style="flex:1">快速演示</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">信道模式</div>
+      <div class="mode-options" id="modeOptions">
+        <div class="mode-opt active" data-mode="OK" onclick="app.setMode('OK')">
+          <div class="radio-dot"></div>无错误
+        </div>
+        <div class="mode-opt" data-mode="SINGLE" onclick="app.setMode('SINGLE')">
+          <div class="radio-dot"></div>单比特翻转
+        </div>
+        <div class="mode-params" id="singleParams">
+          <label>位:</label>
+          <input type="number" id="singleBit" value="3" min="1" max="7" onchange="app.modeParams.single=this.value;app._updateModeUI();app.simulator.setMode(app.mode,app.modeParams)">
+        </div>
+        <div class="mode-opt" data-mode="DOUBLE" onclick="app.setMode('DOUBLE')">
+          <div class="radio-dot"></div>双比特翻转
+        </div>
+        <div class="mode-params" id="doubleParams" style="display:none">
+          <label>位1:</label><input type="number" id="doubleBit1" value="2" min="1" max="7" onchange="app.modeParams.double1=this.value;app._updateModeUI();app.simulator.setMode(app.mode,app.modeParams)">
+          <label>位2:</label><input type="number" id="doubleBit2" value="5" min="1" max="7" onchange="app.modeParams.double2=this.value;app._updateModeUI();app.simulator.setMode(app.mode,app.modeParams)">
+        </div>
+        <div class="mode-opt" data-mode="RANDOM" onclick="app.setMode('RANDOM')">
+          <div class="radio-dot"></div>随机翻转
+        </div>
+        <div class="mode-params" id="randomParams" style="display:none">
+          <label>概率:</label>
+          <input type="number" id="randomProb" value="0.15" min="0" max="1" step="0.01" onchange="app.modeParams.random=this.value;app._updateModeUI();app.simulator.setMode(app.mode,app.modeParams)">
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column">
+      <div class="panel-title">系统信息</div>
+      <div style="display:flex;align-items:flex-start;gap:14px;font-family:var(--font-mono);font-size:10.5px;color:var(--text-secondary);line-height:1.95;overflow-y:auto;flex:1">
+        <div style="flex:1">
+          <div>环境 <span style="color:var(--cyan)">浏览器</span></div>
+          <div>引擎 <span style="color:var(--text-primary)">JavaScript</span></div>
+          <div>编码 <span style="color:var(--cyan)" id="encodingInfo">Hamming(7,4)</span></div>
+          <div>信道 <span style="color:var(--text-primary)">BSC 仿真</span></div>
+          <div>状态 <span style="color:var(--green)">运行中</span></div>
+        </div>
+        <div style="flex:1">
+          <div>参考硬件 <span style="color:var(--green)">STM32F103</span></div>
+          <div>内核 <span style="color:var(--text-primary)">Cortex-M3</span></div>
+          <div>主频 <span style="color:var(--text-primary)">72 MHz</span></div>
+          <div>Flash <span style="color:var(--text-primary)">64 KB</span></div>
+          <div>SRAM <span style="color:var(--text-primary)">20 KB</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER — VERTICAL PIPELINE -->
+  <div class="panel-center">
+    <div class="pipeline-container" id="pipelineContainer">
+      <div class="mode-badge">信道模式: <span id="modeBadge">OK</span></div>
+      <div class="pipeline-flow" id="pipelineFlow">
+        <!-- Built dynamically by JS -->
+      </div>
+    </div>
+    <div class="history-nav">
+      <button class="nav-btn char-nav" id="navPrevChar" onclick="app.navigateChar(-1)" disabled title="上一字符">◀◀</button>
+      <button class="nav-btn" id="navPrev" onclick="app.navigate(-1)" disabled title="上一半字节">◀</button>
+      <span class="nav-info" id="navInfo">— / —</span>
+      <button class="nav-btn" id="navNext" onclick="app.navigate(1)" disabled title="下一半字节">▶</button>
+      <button class="nav-btn char-nav" id="navNextChar" onclick="app.navigateChar(1)" disabled title="下一字符">▶▶</button>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="panel-right">
+    <div class="panel">
+      <div class="panel-title">统计</div>
+      <div class="stat-grid">
+        <div class="stat-item"><div class="stat-value cyan" id="statTotal">0</div><div class="stat-label">总计</div></div>
+        <div class="stat-item"><div class="stat-value green" id="statOK">0</div><div class="stat-label">正确</div></div>
+        <div class="stat-item"><div class="stat-value amber" id="statFixed">0</div><div class="stat-label">已纠正</div></div>
+        <div class="stat-item"><div class="stat-value red" id="statLimit">0</div><div class="stat-label">超限</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">当前传输 — <span id="nibbleInfo" style="color:var(--cyan)">等待数据</span></div>
+      <div class="current-char-box">
+        <div class="big-char" id="currentChar">—</div>
+        <div class="char-info">字符索引 <span id="charIndexInfo" style="color:var(--cyan)">—</span> / <span id="charPartInfo" style="color:var(--magenta)">—</span></div>
+      </div>
+      <div class="transfer-row">
+        <span>原始: <span id="origStr" style="color:var(--text-primary)">—</span></span>
+        <span>还原: <span id="restoredStr" style="color:var(--text-primary)">—</span></span>
+      </div>
+      <div class="match-indicator pending" id="matchIndicator" style="margin-top:10px">等待数据…</div>
+    </div>
+
+    <div class="panel user-panel">
+      <span class="user-panel-year">@2026</span>
+      <div class="user-badge">
+        <div class="user-badge-row">
+          <img src="mylogo.png" alt="Logo" class="user-badge-logo">
+          <div class="user-badge-text">
+            <div class="user-name" style="color:var(--cyan)">RC Create</div>
+            <div class="user-tag">Designed &amp; built by</div>
+          </div>
+        </div>
+        <div class="user-badge-row">
+          <img src="avatar.jpg" alt="Avatar" class="avatar">
+          <div class="user-badge-text">
+            <div class="user-name">Los Crotchet</div>
+            <div class="user-tag">Developer</div>
+          </div>
+        </div>
+        <div class="user-badge-copy">&copy; 2026 — 在线演示版</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM DRAWER -->
+<div class="drawer" id="drawer">
+  <div class="drawer-toggle" onclick="app.toggleDrawer()">
+    <span>分析面板</span><span class="arrow">&#x25B8;</span>
+  </div>
+  <div class="drawer-content">
+    <div class="drawer-tabs">
+      <div class="drawer-tab active" data-tab="ber" onclick="app.switchTab('ber')">误码率曲线</div>
+      <div class="drawer-tab" data-tab="log" onclick="app.switchTab('log')">通信日志</div>
+    </div>
+    <div class="drawer-panel active" id="panelBer"><canvas id="berChart"></canvas></div>
+    <div class="drawer-panel" id="panelLog"><div class="log-view" id="logView"></div></div>
+  </div>
+</div>
+
+<script>
+// ==================== HAMMING(7,4) ENGINE ====================
+const Hamming74 = {
+  encode(d1,d2,d3,d4){
+    const p1=d1^d2^d4, p2=d1^d3^d4, p4=d2^d3^d4;
+    return [p1,p2,d1,p4,d2,d3,d4];
+  },
+  syndrome(r){
+    const s1=r[0]^r[2]^r[4]^r[6], s2=r[1]^r[2]^r[5]^r[6], s4=r[3]^r[4]^r[5]^r[6];
+    return {s:[s1,s2,s4],e:s1+2*s2+4*s4};
+  },
+  correct(r,e){
+    const c=[...r]; if(e>=1&&e<=7) c[e-1]^=1; return c;
+  },
+  decode(r){ return [r[2],r[4],r[5],r[6]]; },
+  bitsToNibble(bits){return bits[0]*8+bits[1]*4+bits[2]*2+bits[3]},
+  nibbleToBits(n){return [(n>>3)&1,(n>>2)&1,(n>>1)&1,n&1]}
+};
+
+// ==================== HAMMING(8,4) ENGINE (SEC-DED) ====================
+const Hamming84 = {
+  encode(d1,d2,d3,d4){
+    const p1=d1^d2^d4, p2=d1^d3^d4, p4=d2^d3^d4;
+    const cw=[p1,p2,d1,p4,d2,d3,d4];
+    const p8=cw.reduce((a,b)=>a^b,0);
+    return [...cw,p8];
+  },
+  syndrome(r){
+    const s1=r[0]^r[2]^r[4]^r[6];
+    const s2=r[1]^r[2]^r[5]^r[6];
+    const s4=r[3]^r[4]^r[5]^r[6];
+    const s8=r.reduce((a,b)=>a^b,0);
+    const e=s1+2*s2+4*s4;
+    const doubleError=(e!==0)&&(s8===0);
+    return {s:[s1,s2,s4,s8],e,doubleError};
+  },
+  correct(r,e,doubleError){
+    const c=[...r];
+    if(!doubleError&&e>=1&&e<=8) c[e-1]^=1;
+    return c;
+  },
+  decode(r){ return [r[2],r[4],r[5],r[6]]; },
+  bitsToNibble(bits){return bits[0]*8+bits[1]*4+bits[2]*2+bits[3]},
+  nibbleToBits(n){return [(n>>3)&1,(n>>2)&1,(n>>1)&1,n&1]}
+};
+
+// ==================== PROTOCOL PARSER ====================
+class ProtocolParser{
+  constructor(){this.reset()}
+  reset(){this.buf='';this.history=[]}
+  feed(chunk){
+    this.buf+=chunk;
+    const lines=this.buf.split('\n'); this.buf=lines.pop()||'';
+    const msgs=[];
+    for(const line of lines){
+      const t=line.trim(); if(!t) continue;
+      if(t.startsWith('OK MODE')){msgs.push({type:'ok_mode',raw:t});continue}
+      if(t.startsWith('BEGIN')){
+        this._current={type:'block',raw:[t],char:'',index:-1,part:'',data:[],code:[],mode:'',recv:[],syn:[],fix:-1,out:[],status:''};
+        const bm=t.match(/char=(.)\s+index=(\d+)\s+part=([HL])/);
+        if(bm){this._current.char=bm[1];this._current.index=parseInt(bm[2]);this._current.part=bm[3]}
+        continue;
+      }
+      if(this._current&&t==='END'){
+        this._current.raw.push(t); msgs.push(this._current);
+        this.history.push(this._current); this._current=null; continue;
+      }
+      if(this._current){
+        this._current.raw.push(t);
+        if(t.startsWith('DATA ')) this._current.data=t.slice(5).split('').map(Number);
+        else if(t.startsWith('CODE ')) this._current.code=t.slice(5).split('').map(Number);
+        else if(t.startsWith('MODE ')) this._current.mode=t.slice(5);
+        else if(t.startsWith('RECV ')) this._current.recv=t.slice(5).split('').map(Number);
+        else if(t.startsWith('SYN ')){
+          let synStr=t.slice(4);
+          synStr=synStr.replace('s1s2s4s8=','').replace('s1s2s4=','');
+          this._current.syn=synStr.split('').map(Number);
+        }
+        else if(t.startsWith('FIX bit=')) this._current.fix=parseInt(t.slice(8));
+        else if(t.startsWith('OUT ')) this._current.out=t.slice(4).split('').map(Number);
+        else if(t.startsWith('STATUS ')) this._current.status=t.slice(7);
+      }
+    }
+    return msgs;
+  }
+}
+
+// ==================== SIMULATOR ====================
+class Simulator{
+  constructor(){
+    this.mode='OK'; this.singleBit=3; this.doubleBits=[2,5]; this.randomProb=0.15;
+    this.codeType='74'; this.callback=null;
+  }
+  setMode(mode,params={}){
+    this.mode=mode;
+    if(params.single!==undefined) this.singleBit=parseInt(params.single);
+    if(params.double1!==undefined) this.doubleBits[0]=parseInt(params.double1);
+    if(params.double2!==undefined) this.doubleBits[1]=parseInt(params.double2);
+    if(params.random!==undefined) this.randomProb=parseFloat(params.random);
+  }
+  start(callback){
+    this.callback=callback;
+    const label=this.codeType==='84'?'Hamming(8,4)':'Hamming(7,4)';
+    this.callback('============================================\n');
+    this.callback(` ${label} Browser Simulation\n`);
+    this.callback('============================================\n');
+    this.callback('System Clock: 72000000 Hz (simulated)\n');
+    this.callback('UART1: 115200-8N1 (simulated)\n');
+    this.callback('SELFTEST PASS\n\n');
+  }
+  sendText(text){
+    if(!this.callback) return;
+    for(let ci=0;ci<text.length;ci++){
+      const c=text[ci]; const code=c.charCodeAt(0);
+      const hi=(code>>4)&0xf, lo=code&0xf;
+      this._simNibble(c,ci,'H',hi); this._simNibble(c,ci,'L',lo);
+    }
+    let orig=text,restored='';
+    for(let ci=0;ci<text.length;ci++){
+      const c=text[ci]; const code=c.charCodeAt(0);
+      const hi=this._decodeNibble((code>>4)&0xf);
+      const lo=this._decodeNibble(code&0xf);
+      restored+=String.fromCharCode((hi<<4)|lo);
+    }
+    this.callback(`\n--- RESULT: orig="${orig}" restored="${restored}" ---\n`);
+  }
+  _engine(){return this.codeType==='84'?Hamming84:Hamming74}
+  _bitLen(){return this.codeType==='84'?8:7}
+  _simNibble(ch,idx,part,val){
+    const H=this._engine(); const N=this._bitLen();
+    const d=H.nibbleToBits(val);
+    const cw=H.encode(d[0],d[1],d[2],d[3]);
+    let recv=[...cw];
+    let modeStr=`MODE ${this.mode}`;
+    if(this.mode==='SINGLE'){
+      const bp=this.singleBit-1; recv[bp]^=1; modeStr+=` ${this.singleBit}`;
+    }else if(this.mode==='DOUBLE'){
+      recv[this.doubleBits[0]-1]^=1; recv[this.doubleBits[1]-1]^=1;
+      modeStr+=` ${this.doubleBits[0]} ${this.doubleBits[1]}`;
+    }else if(this.mode==='RANDOM'){
+      modeStr+=` ${this.randomProb}`;
+      for(let i=0;i<N;i++) if(Math.random()<this.randomProb) recv[i]^=1;
+    }
+    const {s,e,doubleError}=H.syndrome(recv);
+    const corrected=H.correct(recv,e,doubleError);
+    const decoded=H.decode(corrected);
+    let status='OK',fix=-1;
+    const errs=recv.reduce((a,b,i)=>a+(b!==cw[i]?1:0),0);
+    if(this.codeType==='84'&&doubleError){
+      status='DETECTED';
+    }else if(errs===0){
+      status='OK';
+    }else if(errs===1){
+      status='FIXED';
+    }else{
+      status='LIMIT';
+    }
+    if(!doubleError&&e>=1&&e<=N) fix=e;
+
+    const bitsToStr=b=>b.join('');
+    let block=`BEGIN char=${ch} index=${idx} part=${part}\n`;
+    block+=`DATA ${bitsToStr(d)}\n`;
+    block+=`CODE ${bitsToStr(cw)}\n`;
+    block+=`${modeStr}\n`;
+    block+=`RECV ${bitsToStr(recv)}\n`;
+    if(this.codeType==='84'){
+      block+=`SYN s1s2s4s8=${s.join('')}\n`;
+    }else{
+      block+=`SYN s1s2s4=${s.join('')}\n`;
+    }
+    if(fix>=1) block+=`FIX bit=${fix}\n`;
+    block+=`OUT ${bitsToStr(decoded)}\n`;
+    block+=`STATUS ${status}\n`;
+    block+='END\n';
+    this.callback(block);
+  }
+  _decodeNibble(val){
+    const H=this._engine(); const N=this._bitLen();
+    const d=H.nibbleToBits(val);
+    const cw=H.encode(d[0],d[1],d[2],d[3]);
+    let recv=[...cw];
+    if(this.mode==='SINGLE') recv[this.singleBit-1]^=1;
+    else if(this.mode==='DOUBLE'){recv[this.doubleBits[0]-1]^=1;recv[this.doubleBits[1]-1]^=1}
+    else if(this.mode==='RANDOM'){for(let i=0;i<N;i++) if(Math.random()<this.randomProb) recv[i]^=1}
+    const {e,doubleError}=H.syndrome(recv);
+    return H.bitsToNibble(H.decode(H.correct(recv,e,doubleError)));
+  }
+}
+
+// ==================== APP CONTROLLER ====================
+class App{
+  constructor(){
+    this.parser=new ProtocolParser();
+    this.simulator=new Simulator();
+    this.history=[];
+    this.historyIdx=-1;
+    this.stats={total:0,ok:0,fixed:0,limit:0,detected:0};
+    this.mode='OK';
+    this.modeParams={single:3,double1:2,double2:5,random:'0.15'};
+    this.origStr=''; this.restoredStr='';
+    this._pendingHi=new Map();
+    this.berChart=null;
+    this.codeType='74';
+    this._initPipeline();
+    this._startSimulation();
+  }
+
+  // ---- PIPELINE SETUP (VERTICAL LAYOUT) ----
+  _initPipeline(){
+    const flow=document.getElementById('pipelineFlow');
+    const N=this.codeType==='84'?8:7;
+    const synLabel=this.codeType==='84'?'伴随式 (4 bit)':'伴随式 (3 bit)';
+    const stages=[
+      {id:'data', label:'原始数据 (4 bit)', info:''},
+      {id:'code', label:`编码码字 (${N} bit)`, info:''},
+      {id:'recv', label:`接收码字 (${N} bit)`, info:''},
+      {id:'fix',  label:synLabel, info:'fixDetail'},
+      {id:'out',  label:'译码输出 (4 bit)', info:'statusBadge'},
+    ];
+    let html='';
+    for(let i=0;i<stages.length;i++){
+      const s=stages[i];
+      html+=`<div class="stage stage-animate" id="stage${s.id}">`;
+      html+=`<span class="stage-label">${s.label}</span>`;
+      html+=`<div class="stage-bits" id="bits${s.id}"></div>`;
+      html+=`<div class="stage-extra" id="extra${s.id}"></div>`;
+      html+=`</div>`;
+      if(i<stages.length-1){
+        html+=`<div class="stage-connector" id="conn${i}"><div class="v-line"></div></div>`;
+      }
+    }
+    flow.innerHTML=html;
+    this._buildBitElements();
+  }
+
+  _buildBitElements(){
+    const N=this.codeType==='84'?8:7;
+    const synBits=this.codeType==='84'?4:3;
+    const specs={data:4, code:N, recv:N, fix:synBits, out:4};
+    for(const[id,count] of Object.entries(specs)){
+      const container=document.getElementById('bits'+id);
+      if(!container) continue;
+      container.innerHTML='';
+      for(let j=0;j<count;j++){
+        const el=document.createElement('div');
+        el.className='bit'; el.id='bit'+id+j; el.textContent='-';
+        container.appendChild(el);
+      }
+    }
+    document.getElementById('extrafix').innerHTML='<span style="color:var(--text-muted)">—</span>';
+    document.getElementById('extraout').innerHTML='<span class="stage-status-badge ok" id="stageStatus">OK</span>';
+  }
+
+  _setBits(id, vals, cls){
+    for(let i=0;i<vals.length;i++){
+      const el=document.getElementById('bit'+id+i);
+      if(el){el.textContent=vals[i];el.className='bit '+(cls||'')}
+    }
+  }
+
+  // ---- SIMULATION (always on) ----
+  _startSimulation(){
+    this.history=[]; this.historyIdx=-1;
+    this.stats={total:0,ok:0,fixed:0,limit:0,detected:0}; this._updateStats();
+    this.parser.reset(); this._pendingHi.clear();
+    this._clearPipeline();
+    this.simulator.codeType=this.codeType;
+    this.simulator.setMode(this.mode,this.modeParams);
+    this.simulator.start(text=>this._processData(text));
+  }
+
+  // ---- CODE TYPE ----
+  setCodeType(type){
+    if(this.codeType===type) return;
+    this.codeType=type;
+    this.simulator.codeType=type;
+    const label=type==='84'?'8,4':'7,4';
+    document.getElementById('headerTitle').textContent=`Hamming(${label}) Analyzer`;
+    document.getElementById('encodingInfo').textContent=`Hamming(${label})`;
+    document.querySelectorAll('.code-type-btn').forEach(b=>b.classList.toggle('active',b.dataset.ct===type));
+    const maxBit=type==='84'?8:7;
+    document.getElementById('singleBit').max=maxBit;
+    document.getElementById('doubleBit1').max=maxBit;
+    document.getElementById('doubleBit2').max=maxBit;
+    if(this.modeParams.single>maxBit) this.modeParams.single=maxBit;
+    if(this.modeParams.double1>maxBit) this.modeParams.double1=maxBit;
+    if(this.modeParams.double2>maxBit) this.modeParams.double2=maxBit;
+    document.getElementById('singleBit').value=this.modeParams.single;
+    document.getElementById('doubleBit1').value=this.modeParams.double1;
+    document.getElementById('doubleBit2').value=this.modeParams.double2;
+    this._initPipeline();
+    this.history=[]; this.historyIdx=-1;
+    this.stats={total:0,ok:0,fixed:0,limit:0,detected:0}; this._updateStats();
+    this.parser.reset(); this._pendingHi.clear(); this.origStr=''; this.restoredStr='';
+    this._clearPipeline();
+    this.simulator.codeType=this.codeType;
+    this.simulator.setMode(this.mode,this.modeParams);
+    this.simulator.start(text=>this._processData(text));
+    this._toast(`已切换到 Hamming(${type})`,'info');
+  }
+
+  // ---- SEND TEXT ----
+  sendText(){
+    const input=document.getElementById('textInput');
+    const text=input.value.trim();
+    if(!text) return;
+    this.origStr=text; this.restoredStr=''; this._pendingHi.clear();
+    document.getElementById('origStr').textContent=text;
+    document.getElementById('restoredStr').textContent='…';
+    this.simulator.sendText(text);
+    input.value=''; input.focus();
+  }
+
+  sendQuickDemo(){
+    document.getElementById('textInput').value='Hello';
+    this.sendText();
+  }
+
+  // ---- DATA PROCESSING ----
+  _processData(text){
+    const logView=document.getElementById('logView');
+    logView.textContent+=text;
+    if(logView.textContent.length>50000) logView.textContent=logView.textContent.slice(-30000);
+    logView.scrollTop=logView.scrollHeight;
+
+    const msgs=this.parser.feed(text);
+    for(const msg of msgs){
+      if(msg.type==='block'){
+        this.history.push(msg);
+        this.historyIdx=this.history.length-1;
+        this.stats.total++;
+        if(msg.status==='OK') this.stats.ok++;
+        else if(msg.status==='FIXED') this.stats.fixed++;
+        else if(msg.status==='DETECTED') this.stats.detected=(this.stats.detected||0)+1;
+        else if(msg.status==='LIMIT') this.stats.limit++;
+        this._updateStats();
+        this._renderMessage(msg);
+        this._updateNav();
+        // Track restored string
+        const key=msg.char+'\x00'+msg.index;
+        document.getElementById('currentChar').textContent=msg.char;
+        if(msg.part==='H'){
+          this._pendingHi.set(key,msg.out);
+        }else if(msg.part==='L'){
+          const hiBits=this._pendingHi.get(key);
+          if(hiBits){
+            this._pendingHi.delete(key);
+            const H=this.codeType==='84'?Hamming84:Hamming74;
+            const hiVal=H.bitsToNibble(hiBits);
+            const loVal=H.bitsToNibble(msg.out);
+            this.restoredStr+=String.fromCharCode((hiVal<<4)|loVal);
+            document.getElementById('restoredStr').textContent=this.restoredStr;
+            const match=this.restoredStr===this.origStr.substring(0,this.restoredStr.length);
+            const mi=document.getElementById('matchIndicator');
+            if(this.restoredStr.length===this.origStr.length){
+              mi.textContent=match?'✓ 传输成功 — 完全匹配':'✗ 传输失败 — 存在差异';
+              mi.className='match-indicator '+(match?'pass':'fail');
+            }else{
+              mi.textContent='传输中…';
+              mi.className='match-indicator pending';
+            }
+          }
+        }
+      }else if(msg.type==='ok_mode'){
+        this._toast(msg.raw,'info');
+      }
+    }
+  }
+
+  // ---- RENDERING (VERTICAL) ----
+  _renderMessage(msg){
+    const partLabel=msg.part==='H'?'高四位 (High)':'低四位 (Low)';
+    document.getElementById('nibbleInfo').textContent=`半字节 ${msg.part}`;
+    document.getElementById('nibbleInfo').style.color=msg.part==='H'?'var(--cyan)':'var(--magenta)';
+    document.getElementById('charIndexInfo').textContent='#'+msg.index;
+    document.getElementById('charPartInfo').textContent=partLabel;
+    document.getElementById('currentChar').textContent=msg.char;
+
+    const stageIds=['data','code','recv','fix','out'];
+    stageIds.forEach((id,i)=>{
+      const stage=document.getElementById('stage'+id);
+      if(stage){stage.classList.remove('stage-animate');void stage.offsetWidth;stage.classList.add('stage-animate');stage.style.animationDelay=(i*0.1)+'s'}
+    });
+    for(let i=0;i<4;i++){
+      const conn=document.getElementById('conn'+i);
+      if(conn){conn.classList.add('flowing');setTimeout(()=>conn.classList.remove('flowing'),700)}
+    }
+
+    const N=this.codeType==='84'?8:7;
+    setTimeout(()=>this._setBits('data',msg.data,'data-active'),60);
+    setTimeout(()=>this._setBits('code',msg.code,'active'),180);
+    setTimeout(()=>{
+      for(let i=0;i<N;i++){
+        const el=document.getElementById('bitrecv'+i);
+        if(!el) continue;
+        el.textContent=msg.recv[i];
+        el.className='bit '+(msg.code[i]!==msg.recv[i]?'error':'active');
+      }
+    },300);
+    setTimeout(()=>{
+      this._setBits('fix',msg.syn,'syndrome');
+      const fd=document.getElementById('extrafix');
+      const synText=msg.syn.join('');
+      if(this.codeType==='84'){
+        const e3=msg.syn[0]+2*msg.syn[1]+4*msg.syn[2];
+        const s8=msg.syn[3];
+        const eBits3=`${msg.syn[2]}${msg.syn[1]}${msg.syn[0]}`;
+        if(e3===0&&s8===0){
+          fd.innerHTML=`<span style="color:var(--text-secondary)">S=${synText}</span> → 无错误`;
+        }else if(e3===0&&s8===1){
+          fd.innerHTML=`<span style="color:var(--amber);font-weight:700">S=${synText}</span> → p8 错误（数据正确）`;
+        }else if(e3!==0&&s8===0){
+          fd.innerHTML=`<span style="color:var(--red);font-weight:700">S=${synText}</span> → e=(${eBits3})<sub>2</sub>=${e3}? | 双错检测！`;
+        }else{
+          fd.innerHTML=`<span style="color:var(--magenta);font-weight:700">S=${synText}</span> → e=(${eBits3})<sub>2</sub>=<span style="color:var(--red);font-weight:700">${e3}</span>`;
+        }
+      }else{
+        const e=msg.syn[0]+2*msg.syn[1]+4*msg.syn[2];
+        const eBits=`${msg.syn[2]}${msg.syn[1]}${msg.syn[0]}`;
+        if(e>=1&&e<=7) fd.innerHTML=`<span style="color:var(--magenta);font-weight:700">S=${synText}</span> → e=(${eBits})<sub>2</sub>=<span style="color:var(--red);font-weight:700">${e}</span>`;
+        else fd.innerHTML=`<span style="color:var(--text-secondary)">S=${synText}</span> → 无错误`;
+      }
+    },420);
+    setTimeout(()=>{
+      this._setBits('out',msg.out,'output');
+      const stEl=document.getElementById('stageStatus');
+      stEl.textContent=msg.status;
+      stEl.className='stage-status-badge '+(msg.status==='OK'?'ok':msg.status==='FIXED'?'fixed':msg.status==='DETECTED'?'limit':'limit');
+    },540);
+  }
+
+  _clearPipeline(){
+    const N=this.codeType==='84'?8:7;
+    const synBits=this.codeType==='84'?4:3;
+    const specs={data:4, code:N, recv:N, fix:synBits, out:4};
+    for(const[id,count] of Object.entries(specs)){
+      for(let j=0;j<count;j++){
+        const el=document.getElementById('bit'+id+j);
+        if(el){el.textContent='-';el.className='bit'}
+      }
+    }
+    document.getElementById('extrafix').innerHTML='<span style="color:var(--text-muted)">—</span>';
+    const stEl=document.getElementById('stageStatus');
+    if(stEl){stEl.textContent='—';stEl.className='stage-status-badge'}
+    document.getElementById('currentChar').textContent='—';
+    document.getElementById('origStr').textContent='—';
+    document.getElementById('restoredStr').textContent='—';
+    document.getElementById('matchIndicator').textContent='等待数据…';
+    document.getElementById('matchIndicator').className='match-indicator pending';
+    document.getElementById('nibbleInfo').textContent='等待数据';
+    document.getElementById('nibbleInfo').style.color='var(--cyan)';
+    document.getElementById('charIndexInfo').textContent='—';
+    document.getElementById('charPartInfo').textContent='—';
+  }
+
+  // ---- HISTORY NAVIGATION ----
+  navigate(delta){
+    const newIdx=this.historyIdx+delta;
+    if(newIdx<0||newIdx>=this.history.length) return;
+    this.historyIdx=newIdx;
+    this._renderMessage(this.history[this.historyIdx]);
+    this._updateNav();
+  }
+
+  navigateChar(delta){
+    if(this.history.length===0) return;
+    const charIdx=Math.floor(this.historyIdx/2)+delta;
+    const newIdx=charIdx*2;
+    if(newIdx<0||newIdx>=this.history.length) return;
+    this.historyIdx=newIdx;
+    this._renderMessage(this.history[this.historyIdx]);
+    this._updateNav();
+  }
+
+  _updateNav(){
+    const total=this.history.length;
+    const cur=this.historyIdx;
+    document.getElementById('navPrev').disabled=cur<=0;
+    document.getElementById('navNext').disabled=cur>=total-1;
+    const charTotal=Math.ceil(total/2);
+    const charCur=Math.floor(cur/2)+1;
+    document.getElementById('navPrevChar').disabled=charCur<=1;
+    document.getElementById('navNextChar').disabled=charCur>=charTotal;
+    document.getElementById('navInfo').textContent=total>0
+      ?`半字节 ${cur+1}/${total} | 字符 ${charCur}/${charTotal}`:'— / —';
+  }
+
+  // ---- MODE ----
+  setMode(mode){
+    this.mode=mode;
+    this._updateModeUI();
+    const cmd='MODE '+mode+(mode==='SINGLE'?` ${this.modeParams.single}`
+      :mode==='DOUBLE'?` ${this.modeParams.double1} ${this.modeParams.double2}`
+      :mode==='RANDOM'?` ${this.modeParams.random}`:'');
+    this.simulator.setMode(mode,this.modeParams);
+    this._processData(`OK ${cmd}\n`);
+  }
+
+  _updateModeUI(){
+    document.querySelectorAll('.mode-opt').forEach(el=>{
+      el.classList.toggle('active',el.dataset.mode===this.mode);
+    });
+    document.getElementById('singleParams').style.display=this.mode==='SINGLE'?'flex':'none';
+    document.getElementById('doubleParams').style.display=this.mode==='DOUBLE'?'flex':'none';
+    document.getElementById('randomParams').style.display=this.mode==='RANDOM'?'flex':'none';
+    const badge=document.getElementById('modeBadge');
+    if(badge){
+      let desc=this.mode;
+      if(this.mode==='SINGLE') desc=`SINGLE bit=${this.modeParams.single}`;
+      else if(this.mode==='DOUBLE') desc=`DOUBLE bits=${this.modeParams.double1},${this.modeParams.double2}`;
+      else if(this.mode==='RANDOM') desc=`RANDOM p=${this.modeParams.random}`;
+      badge.textContent=desc;
+    }
+  }
+
+  // ---- STATS ----
+  _updateStats(){
+    document.getElementById('statTotal').textContent=this.stats.total;
+    document.getElementById('statOK').textContent=this.stats.ok;
+    document.getElementById('statFixed').textContent=this.stats.fixed;
+    document.getElementById('statLimit').textContent=this.stats.limit+(this.stats.detected||0);
+  }
+
+  // ---- DRAWER ----
+  toggleDrawer(){
+    const d=document.getElementById('drawer');
+    d.classList.toggle('open');
+    if(d.classList.contains('open')&&!this.berChart) this._initBERChart();
+    if(d.classList.contains('open')&&this.berChart) this.berChart.resize();
+  }
+
+  switchTab(tab){
+    document.querySelectorAll('.drawer-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
+    document.getElementById('panelBer').classList.toggle('active',tab==='ber');
+    document.getElementById('panelLog').classList.toggle('active',tab==='log');
+    if(tab==='ber'){
+      if(!this.berChart) this._initBERChart();
+      else this.berChart.resize();
+    }
+  }
+
+  _initBERChart(){
+    const canvas=document.getElementById('berChart');
+    if(!canvas) return;
+    const data=[];
+    for(let p=0.002;p<=0.5;p+=0.005){
+      let coded74=0, coded84=0;
+      for(let i=2;i<=7;i++) coded74+=(i/7)*this._binomial(7,i)*Math.pow(p,i)*Math.pow(1-p,7-i);
+      for(let i=3;i<=8;i++) coded84+=(i/8)*this._binomial(8,i)*Math.pow(p,i)*Math.pow(1-p,8-i);
+      data.push({p,coded74,coded84});
+    }
+    this.berChart=new Chart(canvas,{
+      type:'line',
+      data:{
+        datasets:[{
+          label:'未编码 BSC', data:data.map(d=>({x:d.p,y:d.p})),
+          borderColor:'#ff1744',borderWidth:1.5,pointRadius:0,borderDash:[4,2]
+        },{
+          label:'Hamming(7,4) 编码', data:data.map(d=>({x:d.p,y:d.coded74})),
+          borderColor:'#00e5ff',borderWidth:2,pointRadius:0,backgroundColor:'rgba(0,229,255,0.08)',fill:true
+        },{
+          label:'Hamming(8,4) 编码', data:data.map(d=>({x:d.p,y:d.coded84})),
+          borderColor:'#e040fb',borderWidth:2,pointRadius:0,backgroundColor:'rgba(224,64,251,0.05)',fill:true,borderDash:[6,3]
+        }]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        scales:{
+          x:{type:'linear',title:{display:true,text:'信道误码率 p',color:'#8899aa',font:{family:'JetBrains Mono',size:12}},grid:{color:'rgba(26,42,69,0.5)'},ticks:{color:'#546e7a',font:{family:'JetBrains Mono',size:11}},min:0,max:0.5},
+          y:{type:'logarithmic',title:{display:true,text:'译码后误码率',color:'#8899aa',font:{family:'JetBrains Mono',size:12}},grid:{color:'rgba(26,42,69,0.5)'},ticks:{color:'#546e7a',font:{family:'JetBrains Mono',size:11},callback:v=>v<1e-4?v.toExponential(1):v.toFixed(3)},min:1e-6,max:1}
+        },
+        plugins:{
+          legend:{labels:{color:'#8899aa',font:{family:'JetBrains Mono',size:13},usePointStyle:true,pointStyleWidth:8}},
+          tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y<1e-4?ctx.parsed.y.toExponential(3):ctx.parsed.y.toFixed(4)}`}}
+        }
+      }
+    });
+  }
+
+  _binomial(n,k){if(k<0||k>n) return 0;let r=1;for(let i=1;i<=k;i++) r=r*(n-i+1)/i;return r}
+
+  // ---- HELPERS ----
+  _toast(msg,type='info'){
+    const container=document.getElementById('toasts');
+    const el=document.createElement('div');
+    el.className='toast '+type; el.textContent=msg;
+    container.appendChild(el);
+    setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity 0.3s';setTimeout(()=>el.remove(),300)},2500);
+  }
+}
+
+// ==================== INIT ====================
+const app=new App();
+
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey&&e.key==='Enter'){e.preventDefault();app.sendText()}
+  if(document.activeElement?.tagName!=='INPUT'){
+    if(e.key==='ArrowLeft'){e.preventDefault();app.navigate(-1)}
+    if(e.key==='ArrowRight'){e.preventDefault();app.navigate(1)}
+  }
+});
+</script>
+</body>
+</html>
