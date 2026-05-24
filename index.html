@@ -338,7 +338,69 @@ body::after{
 
 .stage-animate{animation:fadeInUp 0.4s ease both}
 
-/* ============ SCROLLBAR ============ */
+/* ============ MOBILE RESPONSIVE ============ */
+	@media (max-width:860px){
+	  html,body{overflow:auto;height:auto}
+	  .header{height:48px;min-height:48px;padding:0 10px}
+	  .header-brand{font-size:12px;gap:6px;letter-spacing:0.04em}
+	  .header-brand .dot{width:6px;height:6px}
+	  .status-badge{font-size:10px;padding:3px 10px;gap:4px}
+	  .status-badge .indicator{width:6px;height:6px}
+	  .code-type-btn{font-size:10px;padding:3px 8px}
+	  .main{flex-direction:column;padding:8px;gap:8px;overflow:visible}
+	  .panel-left,.panel-right{width:100%;min-width:unset;flex:none;gap:8px}
+	  .panel{padding:12px}
+	  .panel-title{font-size:11px;margin-bottom:8px}
+	  .panel-left>.panel:last-child{flex:none!important;min-height:unset!important;overflow:visible!important}
+	  .input-text{font-size:14px;padding:8px 10px}
+	  .btn{font-size:12px;padding:6px 12px}
+	  .mode-opt{font-size:12px;padding:8px 12px;gap:8px}
+	  .mode-opt .radio-dot{width:12px;height:12px}
+	  .mode-params{gap:6px;flex-wrap:wrap}
+	  .mode-params label{font-size:10px}
+	  .mode-params input{width:40px;padding:4px 6px;font-size:11px}
+	  .pipeline-container{padding:10px;min-height:340px;overflow-x:auto}
+	  .mode-badge{top:6px;right:8px;font-size:10px}
+	  .stage{gap:4px;padding:6px 0}
+	  .stage-label{width:70px;min-width:70px;font-size:8px;letter-spacing:0.03em}
+	  .bit{width:28px;height:28px;font-size:12px;font-weight:600;border-width:1.5px;border-radius:3px}
+	  .stage-bits{gap:3px}
+	  .stage-extra{min-width:auto;font-size:9px;margin-left:6px}
+	  .stage-connector{padding-left:70px;height:16px}
+	  .stage-connector .v-line::after{border-top-width:5px;border-left-width:3px;border-right-width:3px}
+	  .stage-status-badge{font-size:10px;padding:3px 10px}
+	  .history-nav{gap:6px;padding:2px 0}
+	  .nav-btn{width:30px;height:30px;font-size:14px}
+	  .nav-btn.char-nav{font-size:11px;letter-spacing:-1px}
+	  .nav-info{font-size:10px;min-width:auto;flex:1}
+	  .stat-grid{grid-template-columns:repeat(4,1fr);gap:6px}
+	  .stat-item{padding:10px 5px}
+	  .stat-value{font-size:22px}
+	  .stat-label{font-size:9px;margin-top:2px;letter-spacing:0.04em}
+	  .big-char{font-size:34px}
+	  .current-char-box{padding:10px}
+	  .char-info{font-size:10px}
+	  .match-indicator{font-size:12px;padding:8px;margin-top:8px!important}
+	  .transfer-row{font-size:11px}
+	  .user-panel{flex:none;min-height:unset;padding:8px}
+	  .user-panel-year{top:6px;right:10px;font-size:8px}
+	  .user-badge{gap:4px}
+	  .user-badge-row{gap:6px}
+	  .user-badge-row+.user-badge-row{padding-top:4px}
+	  .user-badge .avatar,.user-badge-logo{width:24px;height:24px}
+	  .user-badge .user-name{font-size:10px}
+	  .user-badge .user-tag{font-size:8px;margin-top:1px}
+	  .drawer-toggle{height:28px;font-size:10px;letter-spacing:0.08em}
+	  .drawer-toggle .arrow{font-size:12px;margin-left:6px}
+	  .drawer-content{height:220px;min-height:220px;flex-direction:column}
+	  .drawer-tabs{flex-direction:row;width:100%;min-width:unset;border-right:none;border-bottom:1px solid var(--border-subtle);overflow-x:auto;padding:6px;gap:2px}
+	  .drawer-tab{white-space:nowrap;font-size:11px;padding:6px 10px;flex-shrink:0}
+	  .toast-container{top:56px;right:8px;left:8px}
+	  .toast{max-width:none;font-size:11px;padding:8px 14px}
+	  .bg-grid{background-size:30px 30px}
+	}
+
+	/* ============ SCROLLBAR ============ */
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border-subtle);border-radius:3px}
